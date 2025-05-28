@@ -25,6 +25,33 @@ CLIP_LABELS = ["a rooftop", "a road", "a forest"]
 SAM_CHECKPOINT_PATH = "sam_vit_b_01ec64.pth"
 YOLO_MODEL_PATH = "yolov8n.pt"
 PX_PER_METER = 10  # 1 meter = 10 pixels (example scale)
+import os
+import requests
+
+MODEL_PATH = "sam_vit_b_01ec64.pth"
+MODEL_URL = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
+
+def download_model():
+    if not os.path.exists(MODEL_PATH):
+        print(f"Downloading model weights to {MODEL_PATH}...")
+        response = requests.get(MODEL_URL, stream=True)
+        total_length = response.headers.get('content-length')
+
+        with open(MODEL_PATH, 'wb') as f:
+            if total_length is None:
+                f.write(response.content)
+            else:
+                dl = 0
+                total_length = int(total_length)
+                for data in response.iter_content(chunk_size=4096):
+                    dl += len(data)
+                    f.write(data)
+                    done = int(50 * dl / total_length)
+                    print(f"\r[{'=' * done}{' ' * (50-done)}] {dl/total_length:.2%}", end='')
+        print("\nDownload complete!")
+
+download_model()
+
 
 # ----------------- Load Models -----------------
 @st.cache_resource
