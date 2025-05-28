@@ -35,12 +35,12 @@ PX_PER_METER = 10  # 1 meter = 10 pixels (example scale)
 import os
 import requests
 
-MODEL_PATH = "sam_vit_b_01ec64.pth"
 MODEL_URL = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
+MODEL_PATH = "/tmp/sam_vit_b_01ec64.pth"  # Use /tmp for ephemeral deploy environments
 
 def download_model():
     if not os.path.exists(MODEL_PATH):
-        print(f"Downloading model weights to {MODEL_PATH}...")
+        print(f"Downloading SAM model to {MODEL_PATH}...")
         response = requests.get(MODEL_URL, stream=True)
         total_length = response.headers.get('content-length')
 
@@ -55,10 +55,13 @@ def download_model():
                     f.write(data)
                     done = int(50 * dl / total_length)
                     print(f"\r[{'=' * done}{' ' * (50-done)}] {dl/total_length:.2%}", end='')
-        print("\nDownload complete!")
+        print("\n✅ Download complete!")
+    else:
+        print(f"✅ SAM model already exists at {MODEL_PATH}")
+    return MODEL_PATH
 
-download_model()
-
+# Call this where you need the model path
+sam_checkpoint = download_model()
 
 # ----------------- Load Models -----------------
 @st.cache_resource
