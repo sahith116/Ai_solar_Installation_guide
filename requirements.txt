@@ -1,9 +1,10 @@
 streamlit
 torch
 torchvision
-opencv-python
 matplotlib
 Pillow
 numpy
 segment-anything
-opencv-python
+opencv-python-headless
+
+
