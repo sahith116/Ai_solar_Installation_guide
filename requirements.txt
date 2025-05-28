@@ -8,5 +8,7 @@ segment-anything
 opencv-python-headless
 plotly
 ultralytics
+transformers
+
 
 
