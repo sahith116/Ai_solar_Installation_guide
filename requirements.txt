@@ -9,6 +9,5 @@ opencv-python-headless
 plotly
 ultralytics
 transformers
-
-
+reportlab
 
