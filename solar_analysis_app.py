@@ -1,3 +1,10 @@
+import os
+
+# Set YOLO_CONFIG_DIR to a writable directory
+config_dir = '/tmp/UltralyticsConfig'
+os.makedirs(config_dir, exist_ok=True)  # Create if not exists
+os.environ['YOLO_CONFIG_DIR'] = config_dir
+
 import streamlit as st
 
 # MUST BE FIRST Streamlit command
