@@ -36,7 +36,7 @@ import os
 import requests
 
 MODEL_URL = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
-MODEL_PATH = "/tmp/sam_vit_b_01ec64.pth"  # Use /tmp for ephemeral deploy environments
+MODEL_PATH = "/tmp/sam_vit_b_01ec64.pth"  # Safe path for deployment platforms
 
 def download_model():
     if not os.path.exists(MODEL_PATH):
@@ -60,8 +60,12 @@ def download_model():
         print(f"✅ SAM model already exists at {MODEL_PATH}")
     return MODEL_PATH
 
-# Call this where you need the model path
+# Call this where you load the model
 sam_checkpoint = download_model()
+
+# Then load the model like this:
+from segment_anything import sam_model_registry
+sam = sam_model_registry["vit_b"](checkpoint=sam_checkpoint)
 
 # ----------------- Load Models -----------------
 @st.cache_resource
