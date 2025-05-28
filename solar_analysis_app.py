@@ -24,39 +24,44 @@ from reportlab.lib.utils import ImageReader
 import requests
 
 # ----------------- Fix file watcher env var -----------------
-os.environ["STREAMLIT_FILE_WATCHER_TYPE"] = "none"
 
-# ----------------- Constants -----------------
-CLIP_LABELS = ["a rooftop", "a road", "a forest"]
+
+import os
+import requests
+from segment_anything import sam_model_registry
+
+# Download location for SAM model (works well in deployment)
 MODEL_URL = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
-SAM_CHECKPOINT_PATH = "/tmp/sam_vit_b_01ec64.pth"
-YOLO_MODEL_PATH = "yolov8n.pt"
-PX_PER_METER = 10
+MODEL_PATH = "/tmp/sam_vit_b_01ec64.pth"
 
-# ----------------- Auto-download SAM model -----------------
-def download_sam_model():
-    if not os.path.exists(SAM_CHECKPOINT_PATH):
-        print("📥 Downloading SAM model...")
-        with requests.get(MODEL_URL, stream=True) as r:
-            r.raise_for_status()
-            with open(SAM_CHECKPOINT_PATH, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
+def download_model():
+    if not os.path.exists(MODEL_PATH):
+        print(f"Downloading SAM model to {MODEL_PATH}...")
+        response = requests.get(MODEL_URL, stream=True)
+        total_length = int(response.headers.get('content-length', 0))
+        with open(MODEL_PATH, 'wb') as f:
+            downloaded = 0
+            for chunk in response.iter_content(chunk_size=4096):
+                if chunk:
                     f.write(chunk)
-        print("✅ Model download complete!")
+                    downloaded += len(chunk)
+        print("✅ SAM model download complete.")
     else:
         print("✅ SAM model already exists.")
-    return SAM_CHECKPOINT_PATH
+    return MODEL_PATH
 
-sam_checkpoint = download_sam_model()
-sam = sam_model_registry["vit_b"](checkpoint=sam_checkpoint)
+# Download the model before loading
+sam_checkpoint = download_model()
 
-# ----------------- Load Models -----------------
 @st.cache_resource
 def load_models():
+    if not os.path.exists(MODEL_PATH):
+        st.error(f"Missing model file at {MODEL_PATH}. The model is required.")
+        st.stop()
     try:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        sam_model = sam_model_registry["vit_b"](checkpoint=SAM_CHECKPOINT_PATH)
+        sam_model = sam_model_registry["vit_b"](checkpoint=MODEL_PATH)
         sam_model.to(device=device)
         sam_predictor = SamPredictor(sam_model)
 
@@ -71,6 +76,7 @@ def load_models():
         st.stop()
 
 sam_predictor, yolo_model, clip_model, clip_processor, device = load_models()
+
 
 # ----------------- Helper Functions -----------------
 
