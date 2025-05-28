@@ -2,12 +2,11 @@ import os
 
 # Set YOLO_CONFIG_DIR to a writable directory
 config_dir = '/tmp/UltralyticsConfig'
-os.makedirs(config_dir, exist_ok=True)  # Create if not exists
+os.makedirs(config_dir, exist_ok=True)
 os.environ['YOLO_CONFIG_DIR'] = config_dir
 
 import streamlit as st
 
-# MUST BE FIRST Streamlit command
 st.set_page_config(page_title="AI Solar Analysis", layout="wide")
 from PIL import Image
 import numpy as np
@@ -17,62 +16,43 @@ import plotly.graph_objects as go
 from segment_anything import sam_model_registry, SamPredictor
 from ultralytics import YOLO
 from transformers import CLIPProcessor, CLIPModel
-import os
 import pandas as pd
 import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+import requests
 
 # ----------------- Fix file watcher env var -----------------
 os.environ["STREAMLIT_FILE_WATCHER_TYPE"] = "none"
 
 # ----------------- Constants -----------------
 CLIP_LABELS = ["a rooftop", "a road", "a forest"]
-SAM_CHECKPOINT_PATH = "sam_vit_b_01ec64.pth"
-YOLO_MODEL_PATH = "yolov8n.pt"
-PX_PER_METER = 10  # 1 meter = 10 pixels (example scale)
-import os
-import requests
-
 MODEL_URL = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
-MODEL_PATH = "/tmp/sam_vit_b_01ec64.pth"  # Safe path for deployment platforms
+SAM_CHECKPOINT_PATH = "/tmp/sam_vit_b_01ec64.pth"
+YOLO_MODEL_PATH = "yolov8n.pt"
+PX_PER_METER = 10
 
-def download_model():
-    if not os.path.exists(MODEL_PATH):
-        print(f"Downloading SAM model to {MODEL_PATH}...")
-        response = requests.get(MODEL_URL, stream=True)
-        total_length = response.headers.get('content-length')
-
-        with open(MODEL_PATH, 'wb') as f:
-            if total_length is None:
-                f.write(response.content)
-            else:
-                dl = 0
-                total_length = int(total_length)
-                for data in response.iter_content(chunk_size=4096):
-                    dl += len(data)
-                    f.write(data)
-                    done = int(50 * dl / total_length)
-                    print(f"\r[{'=' * done}{' ' * (50-done)}] {dl/total_length:.2%}", end='')
-        print("\n✅ Download complete!")
+# ----------------- Auto-download SAM model -----------------
+def download_sam_model():
+    if not os.path.exists(SAM_CHECKPOINT_PATH):
+        print("📥 Downloading SAM model...")
+        with requests.get(MODEL_URL, stream=True) as r:
+            r.raise_for_status()
+            with open(SAM_CHECKPOINT_PATH, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        print("✅ Model download complete!")
     else:
-        print(f"✅ SAM model already exists at {MODEL_PATH}")
-    return MODEL_PATH
+        print("✅ SAM model already exists.")
+    return SAM_CHECKPOINT_PATH
 
-# Call this where you load the model
-sam_checkpoint = download_model()
-
-# Then load the model like this:
-from segment_anything import sam_model_registry
+sam_checkpoint = download_sam_model()
 sam = sam_model_registry["vit_b"](checkpoint=sam_checkpoint)
 
 # ----------------- Load Models -----------------
 @st.cache_resource
 def load_models():
-    if not os.path.exists(SAM_CHECKPOINT_PATH):
-        st.error(f"Missing {SAM_CHECKPOINT_PATH}. Please place it in the working directory.")
-        st.stop()
     try:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -176,7 +156,6 @@ def generate_pdf_report(image, stats, fig_image, panel_overlay):
         c.drawString(50, y, f"{key}: {value}")
         y -= 20
 
-    # Add images: panel layout and savings plot
     overlay_img = Image.fromarray(panel_overlay)
     overlay_buffer = io.BytesIO()
     overlay_img.save(overlay_buffer, format="PNG")
@@ -193,9 +172,8 @@ def generate_pdf_report(image, stats, fig_image, panel_overlay):
     return buffer
 
 # ----------------- Streamlit App -----------------
-
 def main():
-    st.title("🌞 AI Rooftop Solar Analysis with SAM, YOLO & CLIP")
+    st.title("\U0001F31E AI Rooftop Solar Analysis with SAM, YOLO & CLIP")
 
     uploaded_file = st.file_uploader("Upload Rooftop Image (JPEG/PNG)", type=["jpg", "jpeg", "png"])
     if not uploaded_file:
@@ -228,8 +206,7 @@ def main():
     st.image(mask * 255, caption="Rooftop Mask (with obstacles filtered)", use_container_width=True)
     st.image(overlay_mask(image, mask), caption="Overlay of Mask on Image", use_container_width=True)
 
-    # Sidebar Inputs
-    st.sidebar.header("🔧 Assumptions")
+    st.sidebar.header("\U0001F527 Assumptions")
     panel_length = st.sidebar.number_input("Panel Length (m)", 1.0, 3.0, 1.6, 0.1)
     panel_width = st.sidebar.number_input("Panel Width (m)", 0.5, 2.0, 1.0, 0.1)
     cost_per_kw = st.sidebar.number_input("Installation cost per kW (₹)", 10000, 200000, 70000, step=1000)
@@ -275,7 +252,6 @@ def main():
     csv = summary_df.to_csv(index=False).encode()
     st.download_button("📥 Download Report (CSV)", data=csv, file_name="solar_report.csv", mime="text/csv")
 
-    # Export PDF Report
     pdf_stats = {
         "Usable Area (m²)": f"{area_m2:.2f}",
         "Capacity (kW)": f"{solar_capacity_kw:.2f}",
