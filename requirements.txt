@@ -5,6 +5,7 @@ matplotlib
 Pillow
 numpy
 segment-anything
+pip install opencv-python
 opencv-python-headless
 plotly
 ultralytics
