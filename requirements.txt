@@ -11,5 +11,6 @@ ultralytics
 transformers
 reportlab
 gdown
+sentencepiece
 
 
