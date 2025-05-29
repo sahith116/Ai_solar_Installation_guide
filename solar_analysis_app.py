@@ -30,8 +30,7 @@ os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
 
 # ----------------- Constants -----------------
 CLIP_LABELS = ["a rooftop", "a road", "a forest"]
-MODEL_URL = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
-SAM_CHECKPOINT_PATH = "/tmp/sam_vit_b_01ec64.pth"
+
 YOLO_MODEL_PATH = "yolov8n.pt"
 PX_PER_METER = 10
 
