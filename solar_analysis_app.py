@@ -37,8 +37,15 @@ from reportlab.lib.utils import ImageReader
 CLIP_LABELS = ["a rooftop", "a road", "a forest"]
 YOLO_MODEL_PATH = "yolov8n.pt"
 PX_PER_METER = 10
-SAM_CHECKPOINT_URL = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
+SAM_DRIVE_ID = "1lAipianp9NLedqF4xWJ-YSSgwJaTff6R"
 SAM_MODEL_PATH = "sam_vit_b_01ec64.pth"
+
+def download_sam_model():
+    if not os.path.exists(SAM_MODEL_PATH):
+        url = f"https://drive.google.com/uc?id={SAM_DRIVE_ID}"
+        with st.spinner("📥 Downloading SAM model from Google Drive..."):
+            gdown.download(url, SAM_MODEL_PATH, quiet=False)
+    return SAM_MODEL_PATH
 
 # ----------------- Download SAM Model -----------------
 def download_sam_model():
