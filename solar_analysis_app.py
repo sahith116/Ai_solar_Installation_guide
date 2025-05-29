@@ -35,19 +35,7 @@ SAM_CHECKPOINT_PATH = "/tmp/sam_vit_b_01ec64.pth"
 YOLO_MODEL_PATH = "yolov8n.pt"
 PX_PER_METER = 10
 
-# ----------------- Auto-download SAM model -----------------
-def download_sam_model():
-    if not os.path.exists(SAM_CHECKPOINT_PATH):
-        print("📥 Downloading SAM model...")
-        with requests.get(MODEL_URL, stream=True) as r:
-            r.raise_for_status()
-            with open(SAM_CHECKPOINT_PATH, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-        print("✅ Model download complete!")
-    else:
-        print("✅ SAM model already exists.")
-    return SAM_CHECKPOINT_PATH
+
 
 # ----------------- Load Models -----------------
 @st.cache_resource
