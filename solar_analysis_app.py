@@ -2,25 +2,20 @@ import os
 import urllib.request
 import streamlit as st
 
-# ⚠️ MUST BE FIRST Streamlit command
 st.set_page_config(page_title="AI Solar Analysis", layout="wide")
-
-# ----------------- Fix file watcher env var -----------------
 os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
 
-# ----------------- Set YOLO_CONFIG_DIR -----------------
+# Set YOLO config dir
 config_dir = '/tmp/UltralyticsConfig'
 os.makedirs(config_dir, exist_ok=True)
 os.environ['YOLO_CONFIG_DIR'] = config_dir
-
-# ... rest of your code ...
-
 
 # ----------------- Imports -----------------
 from PIL import Image
 import numpy as np
 import cv2
 import torch
+import gdown
 import plotly.graph_objects as go
 from segment_anything import sam_model_registry, SamPredictor
 from ultralytics import YOLO
@@ -30,6 +25,7 @@ import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+import torch.nn as nn
 
 # ----------------- Constants -----------------
 CLIP_LABELS = ["a rooftop", "a road", "a forest"]
@@ -37,36 +33,68 @@ YOLO_MODEL_PATH = "yolov8n.pt"
 PX_PER_METER = 10
 SAM_CHECKPOINT_URL = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
 SAM_MODEL_PATH = "sam_vit_b_01ec64.pth"
+SOLAR_MODEL_PATH = "solar_model.pth"
+SOLAR_MODEL_DRIVE_ID = "1lAipianp9NLedqF4xWJ-YSSgwJaTff6R"
 
-# ----------------- Download SAM Model -----------------
+# ----------------- Model Download -----------------
+def download_model_from_drive():
+    if not os.path.exists(SOLAR_MODEL_PATH):
+        url = f"https://drive.google.com/uc?id={SOLAR_MODEL_DRIVE_ID}"
+        with st.spinner("Downloading solar model..."):
+            gdown.download(url, SOLAR_MODEL_PATH, quiet=False)
+
 def download_sam_model():
     if not os.path.exists(SAM_MODEL_PATH):
         with st.spinner("Downloading SAM model..."):
             urllib.request.urlretrieve(SAM_CHECKPOINT_URL, SAM_MODEL_PATH)
     return SAM_MODEL_PATH
 
+# ----------------- Placeholder Model -----------------
+class MySolarModel(nn.Module):
+    def __init__(self):
+        super(MySolarModel, self).__init__()
+        self.fc = nn.Linear(512, 1)  # 🔁 Replace this with your actual model
+
+    def forward(self, x):
+        return self.fc(x)
+
 # ----------------- Load Models -----------------
 @st.cache_resource
 def load_models():
     try:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        checkpoint_path = download_sam_model()
 
+        # SAM
+        checkpoint_path = download_sam_model()
         sam_model = sam_model_registry["vit_b"](checkpoint=checkpoint_path)
         sam_model.to(device=device)
         sam_predictor = SamPredictor(sam_model)
 
+        # YOLO
         yolo_model = YOLO(YOLO_MODEL_PATH)
 
+        # CLIP
         clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
-        return sam_predictor, yolo_model, clip_model, clip_processor, device
+        # Solar model
+        download_model_from_drive()
+        solar_model = MySolarModel()
+        solar_model.load_state_dict(torch.load(SOLAR_MODEL_PATH, map_location=device))
+        solar_model.to(device)
+        solar_model.eval()
+
+        return sam_predictor, yolo_model, clip_model, clip_processor, device, solar_model
+
     except Exception as e:
         st.error(f"🚨 Model loading failed: {e}")
         st.stop()
 
-sam_predictor, yolo_model, clip_model, clip_processor, device = load_models()
+sam_predictor, yolo_model, clip_model, clip_processor, device, solar_model = load_models()
+
+
+
+
 
 # ----------------- Helper Functions -----------------
 

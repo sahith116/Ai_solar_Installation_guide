@@ -10,4 +10,5 @@ plotly
 ultralytics
 transformers
 reportlab
+gdown
 
