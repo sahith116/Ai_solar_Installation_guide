@@ -169,7 +169,7 @@ def generate_pdf_report(image, stats, fig_image, panel_overlay):
 
 # ----------------- Streamlit App -----------------
 def main():
-    st.set_page_config(page_title="AI Solar Analysis", layout="wide")
+    
     st.title("\U0001F31E AI Rooftop Solar Analysis with SAM, YOLO & CLIP")
 
     uploaded_file = st.file_uploader("Upload Rooftop Image (JPEG/PNG)", type=["jpg", "jpeg", "png"])
