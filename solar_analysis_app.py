@@ -1,13 +1,16 @@
 import os
+import urllib.request
+import streamlit as st
 
-# Set YOLO_CONFIG_DIR to a writable directory
+# ----------------- Fix file watcher env var -----------------
+os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
+
+# ----------------- Set YOLO_CONFIG_DIR -----------------
 config_dir = '/tmp/UltralyticsConfig'
 os.makedirs(config_dir, exist_ok=True)
 os.environ['YOLO_CONFIG_DIR'] = config_dir
 
-import streamlit as st
-st.set_page_config(page_title="AI Solar Analysis", layout="wide")
-
+# ----------------- Imports -----------------
 from PIL import Image
 import numpy as np
 import cv2
@@ -21,28 +24,26 @@ import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
-import requests
-
-# ----------------- Fix file watcher env var -----------------
-import os
-os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
-
 
 # ----------------- Constants -----------------
 CLIP_LABELS = ["a rooftop", "a road", "a forest"]
-
 YOLO_MODEL_PATH = "yolov8n.pt"
 PX_PER_METER = 10
+SAM_CHECKPOINT_URL = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
+SAM_MODEL_PATH = "sam_vit_b_01ec64.pth"
 
-
+# ----------------- Download SAM Model -----------------
+def download_sam_model():
+    if not os.path.exists(SAM_MODEL_PATH):
+        with st.spinner("Downloading SAM model..."):
+            urllib.request.urlretrieve(SAM_CHECKPOINT_URL, SAM_MODEL_PATH)
+    return SAM_MODEL_PATH
 
 # ----------------- Load Models -----------------
 @st.cache_resource
 def load_models():
     try:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        # Ensure SAM model is downloaded before loading
         checkpoint_path = download_sam_model()
 
         sam_model = sam_model_registry["vit_b"](checkpoint=checkpoint_path)
@@ -60,17 +61,6 @@ def load_models():
         st.stop()
 
 sam_predictor, yolo_model, clip_model, clip_processor, device = load_models()
-# Load everything once
-
-
-
-
-
-
-
-
-# ----------------- Load Models -----------------
-
 
 # ----------------- Helper Functions -----------------
 
@@ -173,6 +163,7 @@ def generate_pdf_report(image, stats, fig_image, panel_overlay):
 
 # ----------------- Streamlit App -----------------
 def main():
+    st.set_page_config(page_title="AI Solar Analysis", layout="wide")
     st.title("\U0001F31E AI Rooftop Solar Analysis with SAM, YOLO & CLIP")
 
     uploaded_file = st.file_uploader("Upload Rooftop Image (JPEG/PNG)", type=["jpg", "jpeg", "png"])
