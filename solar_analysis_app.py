@@ -24,7 +24,9 @@ from reportlab.lib.utils import ImageReader
 import requests
 
 # ----------------- Fix file watcher env var -----------------
-os.environ["STREAMLIT_FILE_WATCHER_TYPE"] = "none"
+import os
+os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
+
 
 # ----------------- Constants -----------------
 CLIP_LABELS = ["a rooftop", "a road", "a forest"]
