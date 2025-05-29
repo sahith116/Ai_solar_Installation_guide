@@ -50,8 +50,9 @@ def download_sam_model():
 # ----------------- Download SAM Model -----------------
 def download_sam_model():
     if not os.path.exists(SAM_MODEL_PATH):
-        with st.spinner("Downloading SAM model..."):
-            urllib.request.urlretrieve(SAM_CHECKPOINT_URL, SAM_MODEL_PATH)
+        url = f"https://drive.google.com/uc?id={SAM_DRIVE_ID}"
+        with st.spinner("📥 Downloading SAM model from Google Drive..."):
+            gdown.download(url, SAM_MODEL_PATH, quiet=False)
     return SAM_MODEL_PATH
 
 # ----------------- Load Models -----------------
