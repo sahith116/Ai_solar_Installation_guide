@@ -1,6 +1,8 @@
-# ----------------- Environment Setup (Must be first) -----------------
+
 import os
-os.environ["STREAMLIT_WATCHER_TYPE"] = "none"  # Disable Streamlit file watcher early
+os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
+os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
+
 
 import streamlit as st
 from PIL import Image
