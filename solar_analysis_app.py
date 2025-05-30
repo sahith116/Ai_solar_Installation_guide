@@ -1,23 +1,8 @@
-
+# ----------------- Environment Setup (Must be first) -----------------
 import os
-import urllib.request
+os.environ["STREAMLIT_WATCHER_TYPE"] = "none"  # Disable Streamlit file watcher early
+
 import streamlit as st
-
-
-# ⚠️ MUST BE FIRST Streamlit command
-st.set_page_config(page_title="AI Solar Analysis", layout="wide")
-
-os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
-
-# ----------------- Fix file watcher env var -----------------
-os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
-
-# ----------------- Set YOLO_CONFIG_DIR -----------------
-config_dir = '/tmp/UltralyticsConfig'
-os.makedirs(config_dir, exist_ok=True)
-os.environ['YOLO_CONFIG_DIR'] = config_dir
-
-# ... rest of your code ...# ----------------- Imports -----------------
 from PIL import Image
 import numpy as np
 import cv2
@@ -25,7 +10,6 @@ import torch
 import gdown
 import plotly.graph_objects as go
 from segment_anything import sam_model_registry, SamPredictor
-
 from ultralytics import YOLO
 from transformers import CLIPProcessor, CLIPModel
 import pandas as pd
@@ -34,10 +18,11 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 import asyncio
-try:
-    asyncio.get_running_loop()
-except RuntimeError:
-    asyncio.set_event_loop(asyncio.new_event_loop())
+
+# ----------------- Set YOLO_CONFIG_DIR -----------------
+config_dir = '/tmp/UltralyticsConfig'
+os.makedirs(config_dir, exist_ok=True)
+os.environ['YOLO_CONFIG_DIR'] = config_dir
 
 # ----------------- Constants -----------------
 CLIP_LABELS = ["a rooftop", "a road", "a forest"]
@@ -45,13 +30,6 @@ YOLO_MODEL_PATH = "yolov8n.pt"
 PX_PER_METER = 10
 SAM_DRIVE_ID = "1lAipianp9NLedqF4xWJ-YSSgwJaTff6R"
 SAM_MODEL_PATH = "sam_vit_b_01ec64.pth"
-
-def download_sam_model():
-    if not os.path.exists(SAM_MODEL_PATH):
-        url = f"https://drive.google.com/uc?id={SAM_DRIVE_ID}"
-        with st.spinner("📥 Downloading SAM model from Google Drive..."):
-            gdown.download(url, SAM_MODEL_PATH, quiet=False)
-    return SAM_MODEL_PATH
 
 # ----------------- Download SAM Model -----------------
 def download_sam_model():
@@ -107,7 +85,7 @@ def segment_rooftop(image_pil):
 def detect_obstacles(image_np):
     st.info("🧠 Detecting obstacles with YOLO...")
     results = yolo_model(image_np)
-    return results[0].boxes.data.cpu().numpy() if results else []
+    return results[0].boxes.data.cpu().numpy() if results and results[0].boxes is not None else []
 
 def apply_obstacle_mask(mask, detections):
     for det in detections:
@@ -185,8 +163,14 @@ def generate_pdf_report(image, stats, fig_image, panel_overlay):
 
 # ----------------- Streamlit App -----------------
 def main():
-    
-    st.title("\U0001F31E AI Rooftop Solar Analysis with SAM, YOLO & CLIP")
+    # Fix asyncio RuntimeError
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
+    st.set_page_config(page_title="AI Solar Analysis", layout="wide")
+    st.title("🌞 AI Rooftop Solar Analysis with SAM, YOLO & CLIP")
 
     uploaded_file = st.file_uploader("Upload Rooftop Image (JPEG/PNG)", type=["jpg", "jpeg", "png"])
     if not uploaded_file:
@@ -219,7 +203,7 @@ def main():
     st.image(mask * 255, caption="Rooftop Mask (with obstacles filtered)", use_container_width=True)
     st.image(overlay_mask(image, mask), caption="Overlay of Mask on Image", use_container_width=True)
 
-    st.sidebar.header("\U0001F527 Assumptions")
+    st.sidebar.header("🔧 Assumptions")
     panel_length = st.sidebar.number_input("Panel Length (m)", 1.0, 3.0, 1.6, 0.1)
     panel_width = st.sidebar.number_input("Panel Width (m)", 0.5, 2.0, 1.0, 0.1)
     cost_per_kw = st.sidebar.number_input("Installation cost per kW (₹)", 10000, 200000, 70000, step=1000)
