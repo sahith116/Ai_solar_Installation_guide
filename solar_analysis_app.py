@@ -57,7 +57,7 @@ def load_models():
         yolo_model = YOLO(YOLO_MODEL_PATH)
 
         clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", use_fast=True)
 
         return sam_predictor, yolo_model, clip_model, clip_processor, device
     except Exception as e:
