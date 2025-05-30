@@ -6,6 +6,8 @@ import streamlit as st
 # ⚠️ MUST BE FIRST Streamlit command
 st.set_page_config(page_title="AI Solar Analysis", layout="wide")
 
+os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
+
 # ----------------- Fix file watcher env var -----------------
 os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
 
@@ -14,10 +16,7 @@ config_dir = '/tmp/UltralyticsConfig'
 os.makedirs(config_dir, exist_ok=True)
 os.environ['YOLO_CONFIG_DIR'] = config_dir
 
-# ... rest of your code ...
-
-
-# ----------------- Imports -----------------
+# ... rest of your code ...# ----------------- Imports -----------------
 from PIL import Image
 import numpy as np
 import cv2
