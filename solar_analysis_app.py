@@ -19,6 +19,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 import asyncio
 
+
 # ----------------- Set YOLO_CONFIG_DIR -----------------
 config_dir = '/tmp/UltralyticsConfig'
 os.makedirs(config_dir, exist_ok=True)
@@ -30,6 +31,9 @@ YOLO_MODEL_PATH = "yolov8n.pt"
 PX_PER_METER = 10
 SAM_DRIVE_ID = "1lAipianp9NLedqF4xWJ-YSSgwJaTff6R"
 SAM_MODEL_PATH = "sam_vit_b_01ec64.pth"
+
+import streamlit as st
+st.set_page_config(page_title="AI Solar Analysis", layout="wide")
 
 # ----------------- Download SAM Model -----------------
 def download_sam_model():
@@ -169,7 +173,7 @@ def main():
     except RuntimeError:
         asyncio.set_event_loop(asyncio.new_event_loop())
 
-    st.set_page_config(page_title="AI Solar Analysis", layout="wide")
+  
     st.title("🌞 AI Rooftop Solar Analysis with SAM, YOLO & CLIP")
 
     uploaded_file = st.file_uploader("Upload Rooftop Image (JPEG/PNG)", type=["jpg", "jpeg", "png"])
