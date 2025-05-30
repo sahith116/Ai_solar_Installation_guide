@@ -2,6 +2,8 @@
 import os
 import urllib.request
 import streamlit as st
+import os
+os.system("bash setup.sh")
 
 # ⚠️ MUST BE FIRST Streamlit command
 st.set_page_config(page_title="AI Solar Analysis", layout="wide")
