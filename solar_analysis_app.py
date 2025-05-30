@@ -1,8 +1,6 @@
-
 import os
 os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
 os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
-
 
 import streamlit as st
 from PIL import Image
@@ -21,31 +19,25 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 import asyncio
 
-
-# ----------------- Set YOLO_CONFIG_DIR -----------------
 config_dir = '/tmp/UltralyticsConfig'
 os.makedirs(config_dir, exist_ok=True)
 os.environ['YOLO_CONFIG_DIR'] = config_dir
 
-# ----------------- Constants -----------------
 CLIP_LABELS = ["a rooftop", "a road", "a forest"]
 YOLO_MODEL_PATH = "yolov8n.pt"
 PX_PER_METER = 10
 SAM_DRIVE_ID = "1lAipianp9NLedqF4xWJ-YSSgwJaTff6R"
 SAM_MODEL_PATH = "sam_vit_b_01ec64.pth"
 
-import streamlit as st
 st.set_page_config(page_title="AI Solar Analysis", layout="wide")
 
-# ----------------- Download SAM Model -----------------
 def download_sam_model():
     if not os.path.exists(SAM_MODEL_PATH):
         url = f"https://drive.google.com/uc?id={SAM_DRIVE_ID}"
-        with st.spinner("📥 Downloading SAM model from Google Drive..."):
+        with st.spinner("📅 Downloading SAM model from Google Drive..."):
             gdown.download(url, SAM_MODEL_PATH, quiet=False)
     return SAM_MODEL_PATH
 
-# ----------------- Load Models -----------------
 @st.cache_resource
 def load_models():
     try:
@@ -59,7 +51,7 @@ def load_models():
         yolo_model = YOLO(YOLO_MODEL_PATH)
 
         clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", use_fast=True)
+        clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
         return sam_predictor, yolo_model, clip_model, clip_processor, device
     except Exception as e:
@@ -68,13 +60,16 @@ def load_models():
 
 sam_predictor, yolo_model, clip_model, clip_processor, device = load_models()
 
-# ----------------- Helper Functions -----------------
-
 def verify_scene(image):
     st.info("🔍 Verifying scene with CLIP...")
-    inputs = clip_processor(text=CLIP_LABELS, images=image, return_tensors="pt", padding=True)
-    outputs = clip_model(**inputs)
-    probs = outputs.logits_per_image.softmax(dim=1)[0]
+
+    image_input = clip_processor.images_processor(image, return_tensors="pt")
+    text_input = clip_processor.tokenizer(CLIP_LABELS, return_tensors="pt", padding=True, truncation=True)
+
+    with torch.no_grad():
+        outputs = clip_model(**text_input, **image_input)
+        probs = outputs.logits_per_image.softmax(dim=1)[0]
+
     rooftop_prob = probs[CLIP_LABELS.index("a rooftop")].item()
     return rooftop_prob > 0.5, dict(zip(CLIP_LABELS, probs.tolist()))
 
@@ -167,15 +162,12 @@ def generate_pdf_report(image, stats, fig_image, panel_overlay):
     buffer.seek(0)
     return buffer
 
-# ----------------- Streamlit App -----------------
 def main():
-    # Fix asyncio RuntimeError
     try:
         asyncio.get_running_loop()
     except RuntimeError:
         asyncio.set_event_loop(asyncio.new_event_loop())
 
-  
     st.title("🌞 AI Rooftop Solar Analysis with SAM, YOLO & CLIP")
 
     uploaded_file = st.file_uploader("Upload Rooftop Image (JPEG/PNG)", type=["jpg", "jpeg", "png"])
@@ -253,7 +245,7 @@ def main():
         "Payback Period (years)": payback_period
     }])
     csv = summary_df.to_csv(index=False).encode()
-    st.download_button("📥 Download Report (CSV)", data=csv, file_name="solar_report.csv", mime="text/csv")
+    st.download_button("📅 Download Report (CSV)", data=csv, file_name="solar_report.csv", mime="text/csv")
 
     pdf_stats = {
         "Usable Area (m²)": f"{area_m2:.2f}",
