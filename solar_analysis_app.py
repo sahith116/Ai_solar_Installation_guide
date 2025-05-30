@@ -63,11 +63,11 @@ sam_predictor, yolo_model, clip_model, clip_processor, device = load_models()
 def verify_scene(image):
     st.info("🔍 Verifying scene with CLIP...")
 
-    image_input = clip_processor.images_processor(image, return_tensors="pt")
-    text_input = clip_processor.tokenizer(CLIP_LABELS, return_tensors="pt", padding=True, truncation=True)
+    # Process both text and image using the processor directly
+    inputs = clip_processor(text=CLIP_LABELS, images=image, return_tensors="pt", padding=True)
 
     with torch.no_grad():
-        outputs = clip_model(**text_input, **image_input)
+        outputs = clip_model(**inputs)
         probs = outputs.logits_per_image.softmax(dim=1)[0]
 
     rooftop_prob = probs[CLIP_LABELS.index("a rooftop")].item()
