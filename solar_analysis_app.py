@@ -23,7 +23,7 @@ import cv2
 import torch
 import gdown
 import plotly.graph_objects as go
-from segment_anything import sam_model_registry, SamPredictor
+from segment_anything.segment_anything import sam_model_registry, SamPredictor
 from ultralytics import YOLO
 from transformers import CLIPProcessor, CLIPModel
 import pandas as pd

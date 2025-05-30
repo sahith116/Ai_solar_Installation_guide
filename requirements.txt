@@ -1,10 +1,9 @@
 streamlit
-torch
+torch==2.0.1
 torchvision
 matplotlib
 Pillow
 numpy
-segment-anything
 opencv-python-headless
 plotly
 ultralytics
